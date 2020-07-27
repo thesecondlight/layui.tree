@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>新增</title>
+    <link rel="stylesheet" href="./scripts/layui/css/layui.css"></link>
+</head>
+<style>
+    #content{
+        display: none;
+        margin-top: 10px;
+        text-align: center;
+    }
+    .layui-input{
+        width:167px;
+    }
+    .icon{
+        width:17px;
+        height: 17px;
+        margin-right:5px;
+    }
+</style>
+<body>
+        <button class="layui-btn" id="btn">新增</button>
+        
+        <div id="content"> 
+            <div class="layui-inline">
+                    <input type="input" placeholder="请输入" class="layui-input">
+                    <div style="display:flex;margin-top:5px; align-items: center;">
+                        <button class="layui-btn layui-btn-primary" id="choose_btn" style="vertical-align:middle">选择目录</button>
+                        <text style="display: block;">选择的路径</text>
+                    </div>
+                    <button class="layui-btn" style="margin-top: 10px;">确定</button>
+            </div>
+        </div>
+        <div id="catalog" style="display: none;">
+            <table id="catalog_table" lay-filter="catalog_table">
+            </table>
+            <ul id="demo"></ul>
+            
+        </div>
+       
+        <script src="./scripts/layui/layui.js"></script>
+        <script src="./scripts/jquery-3.4.0.js"></script>
+        <script>
+            var table_data
+            var url_search
+            var url_target
+            var temp=0
+            goonTree(url_target)
+            function goonTree(url_target){
+                if(temp==0){
+                    url_search='http://10.0.2.62:8080/CNearthServer/common/getListFiles',
+                    temp=1
+                }
+                else{
+                    url_search='http://10.0.2.62:8080/CNearthServer/common/getListFiles?path='+url_target
+                }
+                $.ajax({
+                    url:url_search,
+                    methods:'get',
+                    dataType:"json",
+                    async :false,
+                    success:function (res) {
+                        console.log("请求到的数据：",res);
+                        table_data=res
+                        // console.log("取例：",table_data.content[0].fileName)
+                    },
+                    error:function (err) {
+                        console.log(err); 
+                    }
+                })
+                if(temp!=0){
+                    tree2()
+                }
+            }
+            function tree2(){
+                for(let i=0;i< table_data.content.length;i++){
+                    table_data.content[i].title=table_data.content[i].fileName
+                    console.log(table_data.content[i])
+
+                }
+                layui.use(['layer','jquery','table','tree'],function(){
+                var layer = layui.layer;
+                var $=layui.jquery; 
+                var table=layui.table;
+                console.log(table_data.content)
+                var tree=layui.tree;
+                
+                    tree.render({
+                        elem:'#demo',
+                        parseData: function(table_data){ //table_data 即为原始返回的数据
+                            // console.log("返回的数据",table_data);
+                            return {
+                                "code": 0, //解析接口状态
+                                "data": table_data//解析数据列表
+                            };
+                        },
+                        data:table_data.content,
+                        click:function(data){
+                            console.log(data.data.fileName);
+                            url_target=(data.data.fileName).replace('\\','//')
+                            console.log("url_target",url_target)
+                            goonTree(url_target)
+                        }
+                    })
+                
+                
+                
+                
+                $(document).on('click','#btn',function(){
+                    layer.open({
+                        title: '新增数据',
+                        type:1,
+                        area: ['250px', '200px'],
+                        content: $("#content")
+                    });     
+                })
+                $(document).on('click','#choose_btn',function(){
+                    // table.render({
+                    //     elem:'#catalog_table',
+                    //     url:'http://10.0.2.62:8080/CNearthServer/common/getListFiles',
+                    //     page:false,
+                    //     event:'goon',
+                    //     parseData: function(res){ //res 即为原始返回的数据
+                    //         return {
+                    //             "code": 0, //解析接口状态
+                    //             "data": res.content//解析数据列表
+                    //         };
+                    //         console.log("返回的数据",res);
+                    //     },
+                    //     cols:[[
+                    //         {field:'fileName',title:'<img src="./icon/back.png" class="icon"></img>名称',height:30,templet:function(res){
+                    //             console.log("每行",res)
+                    //             return res.directory==true?"<img src='./icon/folder.png' class='icon'></img>"+res.fileName:"<img src='../icon/file.png' class='icon'></img>"+res.fileName;
+                    //         }}
+                    //     ]],
+                    // })
+                    parent.layer.open({
+                        title: '选择目录',
+                        type:1,
+                        area: ['500px', '500px'],
+                        content: $('#catalog')
+                    });   
+                })
+            })
+            }
+           
+        </script> 
+</body>
+</html>

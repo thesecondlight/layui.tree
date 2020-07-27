@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>新增</title>
+    <link rel="stylesheet" href="./scripts/layui/css/layui.css"></link>
+</head>
+<style>
+    #content{
+        display: none;
+        margin-top: 10px;
+        text-align: center;
+    }
+    .layui-input{
+        width:167px;
+    }
+    .icon{
+        width:17px;
+        height: 17px;
+        margin-right:5px;
+    }
+</style>
+<body>
+        <button class="layui-btn" id="btn">新增</button>
+        <div id="content"> 
+            <div class="layui-inline">
+                    <input type="input" placeholder="请输入" class="layui-input">
+                    <div style="display:flex;margin-top:5px; align-items: center;">
+                        <button class="layui-btn layui-btn-primary" id="choose_btn" style="vertical-align:middle">选择目录</button>
+                        <text style="display: block;">选择的路径</text>
+                    </div>
+                    <button class="layui-btn" style="margin-top: 10px;">确定</button>
+            </div>
+        </div>
+        <div id="catalog" style="display: none;">
+            <table id="catalog_table" lay-filter="catalog_table"></table>
+        </div>
+        <script src="./scripts/layui/layui.js"></script>
+        <script>
+            layui.use(['layer','jquery','table'],function(){
+                var layer = layui.layer;
+                var $=layui.jquery;
+                var table=layui.table;
+                $(document).on('click','#btn',function(){
+                    layer.open({
+                        title: '新增数据',
+                        type:1,
+                        area: ['250px', '200px'],
+                        content: $("#content")
+                    });     
+                })
+                $(document).on('click','#choose_btn',function(){
+                    table.render({
+                        elem:'#catalog_table',
+                        url:'http://10.0.2.62:8080/CNearthServer/common/getListFiles',
+                        page:false,
+                        event:'goon',
+                        parseData: function(res){ //res 即为原始返回的数据
+                            return {
+                                "code": 0, //解析接口状态
+                                "data": res.content//解析数据列表
+                            };
+                            console.log(res.data);
+                        },
+                        cols:[[
+                            {field:'fileName',title:'<img src="./icon/back.png" class="icon"></img>名称',height:30,templet:function(res){
+                                console.log(res)
+                                return res.directory==true?"<img src='./icon/folder.png' class='icon'></img>"+res.fileName:"<img src='../icon/file.png' class='icon'></img>"+res.fileName;
+                            }}
+                        ]],
+                    })
+                    parent.layer.open({
+                        title: '选择目录',
+                        type:1,
+                        area: ['500px', '500px'],
+                        content: $('#catalog')
+                    });   
+                })
+            })
+        </script> 
+</body>
+</html>
