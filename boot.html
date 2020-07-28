@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.1.4/locale/bootstrap-table-zh-CN.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <style>
+        .icon1{
+            width:17px;
+            height: 17px;
+        }
+        .icon2{
+            width:17px;
+            height: 17px;
+            margin-left:-4px;
+            margin-bottom: -5px;
+        }
+    </style>
+</head>
+<body>
+   <div id="app">
+        <table class="table table-hover" >
+        <thead style="background:#efefef;">
+			<tr>
+                <th v-on:click="back()"><img src="./icon/back.png" class="icon1"></img><img src="./icon/ellipsis.png" class="icon2"></img></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="i in fileNameList">
+                <th v-on:click="goon(i)">{{i.fileName}}</th>
+            </tr>
+        </tbody>
+      </table>
+   </div>
+     
+      <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+               fileNameList:[],
+               filenameSelected:'',  //存最后选中的文件名
+               temp:0,
+               url_search:'',
+               url_target:''
+            },
+            mounted: function () {
+                this.ajaxRequest()
+            },
+            methods:{
+                ajaxRequest:function(){
+                    let that=this
+                    if(that.temp===0){
+                        that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles'
+                    }
+                    else{
+                        that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles?path='+that.url_target
+                    }
+                    // console.log("这里",that.url_search)
+                    $.ajax({
+                        url: that.url_search,
+                        type: "get",
+                        async:false,
+                        dataType: "json",
+                        success: function(res){
+                            console.log(res)
+                            if(that.temp===1){
+                                for(let i in res.content){
+                                    let a=res.content[i].fileName
+                                    res.content[i].filelongName=a
+                                    res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1)
+                                }
+                                that.fileNameList = res.content;
+                            } 
+                            else{
+                                for(let i in res.content){
+                                    let a=res.content[i].fileName
+                                    res.content[i].filelongName=a
+                                }
+                                that.fileNameList = res.content;
+                            }
+                            that.temp=1
+                        },
+                        error: function(res){
+                            console.log(res)
+                        }
+                    });
+                },
+                goon(i){ //继续点击进入文件夹
+                    // alert(i.fileName)
+                    let that=this
+                    that.url_target=(i.filelongName).replace(/\\/g,'/') //接口地址的\替换为/
+                    if(i.directory===false){ //选择到文件后（不是文件夹），关闭弹窗
+                        // layer.close(mylayer2)
+                        // $('#selected_path').text(url_target)
+                        alert("关闭")
+                    }
+                    else{
+                        that.url_target=that.url_target //这里要加一个\
+                        this.ajaxRequest(that.url_target)
+                    }
+                },
+                back(){
+                    let that=this;
+                    let count=0;
+                    let index=(that.url_target).lastIndexOf("\/"); //返回指定字符串最后出现的位置
+                    for(let i of that.url_target){
+                        if(i =='\/'){
+                            count++; //统计/出现的次数
+                        }
+                    }
+                    if(count===0){ //如果只剩下最后一个\，不删除\
+                        that.url_target=(that.url_target).substring(0,index)
+                        that.temp=0
+                        console.log("这里哦1",that.url_target)
+                    }
+                    else{
+                        that.url_target=(that.url_target).substring(0,index)
+                        console.log("这里哦2",that.url_target)
+                    }
+                    
+                    // that.url_target=that.url_target+'../' 这样走的很乱
+                    that.ajaxRequest()
+                }
+            }
+        })
+</script>
+</body>
+</html>
+
+

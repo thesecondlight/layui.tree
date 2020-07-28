@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>新增</title>
+    <link rel="stylesheet" href="./scripts/layui/css/layui.css"></link>
+    <script src="./scripts/layui/layui.js"></script>
+    <script src="./scripts/jquery-3.4.0.js"></script>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-table/1.1.4/locale/bootstrap-table-zh-CN.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<style>
+    #content{
+        display: none;
+        margin-top: 10px;
+        text-align: center;
+    }
+    .layui-input{
+        width:194px;
+    }
+    .icon{
+        width:17px;
+        height: 17px;
+        margin-right:5px;
+    }
+    .icon1{
+            width:17px;
+            height: 17px;
+        }
+        .icon2{
+            width:17px;
+            height: 17px;
+            margin-left:-4px;
+            margin-bottom: -5px;
+        }
+</style>
+<body>
+        <button class="layui-btn" id="btn">新增</button>
+        
+        <div id="content" style="display: none;"> 
+            <div class="layui-inline">
+                    <input type="input" placeholder="请输入" class="layui-input">
+                    <div style="display:flex;margin-top:5px; align-items: center;">
+                        <button class="layui-btn layui-btn-primary" id="choose_btn" style="vertical-align:middle">选择目录</button>
+                        <text style="display: block;" id="selected_path">选择的文件路径</text>
+                    </div>
+                    <button class="layui-btn" style="margin-top: 10px;">确定</button>
+            </div>
+        </div>
+        <div id="app" style="display: none;">
+            <table class="table table-hover" >
+            <thead style="background:#efefef;">
+                <tr>
+                    <th v-on:click="back()"><img src="./icon/back.png" class="icon1"></img><img src="./icon/ellipsis.png" class="icon2"></img></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="i in fileNameList">
+                    <th v-on:click="goon(i)">{{i.fileName}}</th>
+                </tr>
+            </tbody>
+          </table>
+       </div>
+        
+        <script>
+            layui.use(['layer','jquery','table'],function(){
+                var layer = layui.layer;
+                var $=layui.jquery; 
+                var table=layui.table;
+                $(document).on('click','#btn',function(){
+                    layer.open({
+                        title: '新增数据',
+                        type:1,
+                        area: ['500px', '250px'],
+                        content: $("#content")
+                    });     
+                })
+               
+                $(document).on('click','#choose_btn',function(){
+                    mylayer2=parent.layer.open({
+                        title: '选择目录',
+                        type:1,
+                        area: ['500px', '500px'],
+                        content: $('#app')
+                    });   
+                })
+            })
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    fileNameList:[],
+                    filenameSelected:'',  //存最后选中的文件名
+                    temp:0,
+                    url_search:'',
+                    url_target:''
+                },
+                mounted: function () {
+                    this.ajaxRequest()
+                },
+                methods:{
+                    ajaxRequest:function(){
+                        let that=this
+                        if(that.temp===0){
+                            that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles'
+                        }
+                        else{
+                            that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles?path='+that.url_target
+                        }
+                        // console.log("这里",that.url_search)
+                        $.ajax({
+                            url: that.url_search,
+                            type: "get",
+                            async:false,
+                            dataType: "json",
+                            success: function(res){
+                                console.log(res)
+                                if(that.temp===1){
+                                    for(let i in res.content){
+                                        let a=res.content[i].fileName
+                                        res.content[i].filelongName=a
+                                        res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1)
+                                    }
+                                    that.fileNameList = res.content;
+                                } 
+                                else{
+                                    for(let i in res.content){
+                                        let a=res.content[i].fileName
+                                        res.content[i].filelongName=a
+                                    }
+                                    that.fileNameList = res.content;
+                                }
+                                that.temp=1
+                            },
+                            error: function(res){
+                                console.log(res)
+                            }
+                        });
+                    },
+                    goon(i){ //继续点击进入文件夹
+                        // alert(i.fileName)
+                        let that=this
+                        that.url_target=(i.filelongName).replace(/\\/g,'/') //接口地址的\替换为/
+                        if(i.directory===false){ //选择到文件后（不是文件夹），关闭弹窗
+                            layer.close(mylayer2)
+                            $('#selected_path').text(i.filelongName)
+                            // alert("关闭")
+                        }
+                        else{
+                            that.url_target=that.url_target //这里要加一个\
+                            this.ajaxRequest(that.url_target)
+                        }
+                    },
+                    back(){
+                        let that=this;
+                        let count=0;
+                        let index=(that.url_target).lastIndexOf("\/"); //返回指定字符串最后出现的位置
+                        for(let i of that.url_target){
+                            if(i =='\/'){
+                                count++; //统计/出现的次数
+                            }
+                        }
+                        if(count===0){ //如果只剩下最后一个\，不删除\
+                            that.url_target=(that.url_target).substring(0,index)
+                            that.temp=0
+                            console.log("这里哦1",that.url_target)
+                        }
+                        else{
+                            that.url_target=(that.url_target).substring(0,index)
+                            console.log("这里哦2",that.url_target)
+                        }
+                        
+                        // that.url_target=that.url_target+'../' 这样走的很乱
+                        that.ajaxRequest()
+                    }
+                }
+        })
+
+            
+           
+        </script> 
+</body>
+</html>
