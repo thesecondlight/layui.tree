@@ -59,8 +59,8 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="i in fileNameList">
-                    <th v-on:click="goon(i)">{{i.fileName}}</th>
+                <tr v-for="i in fileNameList"> 
+                    <th v-on:click="goon(i)"><img v-bind:src="i.imgUrl" class="icon"/>{{i.fileName}}</th>
                 </tr>
             </tbody>
           </table>
@@ -96,7 +96,8 @@
                     filenameSelected:'',  //存最后选中的文件名
                     temp:0,
                     url_search:'',
-                    url_target:''
+                    url_target:'',
+                    count:null
                 },
                 mounted: function () {
                     this.ajaxRequest()
@@ -105,12 +106,12 @@
                     ajaxRequest:function(){
                         let that=this
                         if(that.temp===0){
-                            that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles'
+                            that.url_search='http://10.0.1.96:8080/CNearthServer/common/getListFiles'
                         }
                         else{
-                            that.url_search='http://10.0.2.62:8030/CNearthServer/common/getListFiles?path='+that.url_target
+                            that.url_search='http://10.0.1.96:8080/CNearthServer/common/getListFiles?path='+that.url_target
                         }
-                        // console.log("这里",that.url_search)
+                        console.log("搜索的全路径",that.url_search)
                         $.ajax({
                             url: that.url_search,
                             type: "get",
@@ -118,11 +119,19 @@
                             dataType: "json",
                             success: function(res){
                                 console.log(res)
-                                if(that.temp===1){
-                                    for(let i in res.content){
+                                if(that.temp===1){ //temp为1则拼接路径搜索，为0直接使用默认接口搜索
+                                    for(let i in res.content){  //
                                         let a=res.content[i].fileName
-                                        res.content[i].filelongName=a
-                                        res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1)
+                                        let b=res.content[i].imgUrl
+                                        res.content[i].filelongName=a //长地址保留给搜索路径
+                                        res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1) //截取最后一个\之后的内容，作为短文件名显示
+
+                                        if(res.content[i].directory==false){  //判断文件类型，赋值图片地址
+                                            res.content[i].imgUrl='./icon/file.png'
+                                        }
+                                        else{
+                                            res.content[i].imgUrl='./icon/folder.png'
+                                        }
                                     }
                                     that.fileNameList = res.content;
                                 } 
@@ -130,7 +139,14 @@
                                     for(let i in res.content){
                                         let a=res.content[i].fileName
                                         res.content[i].filelongName=a
+                                        if(res.content[i].directory==false){
+                                            res.content[i].imgUrl='./icon/file.png'
+                                        }
+                                        else{
+                                            res.content[i].imgUrl='./icon/folder.png'
+                                        }
                                     }
+
                                     that.fileNameList = res.content;
                                 }
                                 that.temp=1
@@ -147,10 +163,9 @@
                         if(i.directory===false){ //选择到文件后（不是文件夹），关闭弹窗
                             layer.close(mylayer2)
                             $('#selected_path').text(i.filelongName)
-                            // alert("关闭")
                         }
                         else{
-                            that.url_target=that.url_target //这里要加一个\
+                            that.url_target=that.url_target // 测试时，这里要加一个\
                             this.ajaxRequest(that.url_target)
                         }
                     },
@@ -160,27 +175,21 @@
                         let index=(that.url_target).lastIndexOf("\/"); //返回指定字符串最后出现的位置
                         for(let i of that.url_target){
                             if(i =='\/'){
-                                count++; //统计/出现的次数
+                                count++; //统计/出现的次数  只剩下一个时，保留/
                             }
                         }
-                        if(count===0){ //如果只剩下最后一个\，不删除\
-                            that.url_target=(that.url_target).substring(0,index)
-                            that.temp=0
-                            console.log("这里哦1",that.url_target)
+                        that.url_target=(that.url_target).substring(0,index)  //提取/之前的内容
+                        if(count===1&&that.temp_count==null){
+                            that.url_target=that.url_target+'/' //保留最后一个/ 然后设置temp_count=0作为走根目录的标志
+                            that.temp_count=0 
                         }
-                        else{
-                            that.url_target=(that.url_target).substring(0,index)
-                            console.log("这里哦2",that.url_target)
+                        else if(that.temp_count==0){
+                            that.temp=0  //走根目录
                         }
-                        
-                        // that.url_target=that.url_target+'../' 这样走的很乱
                         that.ajaxRequest()
                     }
                 }
         })
-
-            
-           
         </script> 
 </body>
 </html>
