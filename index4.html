@@ -125,18 +125,14 @@
                                     let j=0;
                                     let k=0;
                                     for(let i in res.content){  //
-                                        let a=res.content[i].fileName
                                         let b=res.content[i].imgUrl
-                                        
-                                        res.content[i].filelongName=a //长地址保留给搜索路径
-                                        res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1) //截取最后一个\之后的内容，作为短文件名显示
                                         res.content[i].imgUrl='./icon/file.png' //先把所有的图标改成"文件"，判断是文件夹的改成"文件夹"图标
-                                        
                                         //文件夹 文件排序
                                         if(res.content[i].directory==true){
                                             // console.log("这里为什么是0",res.content[i].fileName)
                                             folderList[j]=res.content[i].fileName;
                                             res.content[j].imgUrl='./icon/folder.png';
+                                            res.content[j].directory=true  //
                                             j++;  
                                             //console.log(folderList[i])
                                         }
@@ -145,18 +141,27 @@
                                             //res.content[k].imgUrl='./icon/file.png';
                                             k++;
                                         }
+                                       
                                     }
                                     
                                     for(let i in fileList){ // 把装文件的数组push进 装文件夹的数组中
+                                        let len=folderList.length
                                         folderList.push(fileList[i])
+                                        res.content[len].directory=false
                                     }
                                     that.fileNameList = res.content;
                                     // console.log("排序后的文件文件夹",folderList)
                                     for(let i in that.fileNameList)
                                     {
-                                        that.fileNameList[i].fileName=folderList[i]
+                                        that.fileNameList[i].filelongName=folderList[i] //长地址保留给搜索路径
+                                        let a=folderList[i]
+                                        // res.content[i].filelongName=a 
+                                        res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1) //截取最后一个\之后的内容，作为短文件名显示
+
                                     }
                                     //console.log("赋值成功的",that.fileNameList)
+                                   
+
                                 } 
                                 else{
                                     for(let i in res.content){
