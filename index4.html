@@ -111,29 +111,52 @@
                         else{
                             that.url_search='http://10.0.1.96:8080/CNearthServer/common/getListFiles?path='+that.url_target
                         }
-                        console.log("搜索的全路径",that.url_search)
+                        //console.log("搜索的全路径",that.url_search)
                         $.ajax({
                             url: that.url_search,
                             type: "get",
                             async:false,
                             dataType: "json",
                             success: function(res){
-                                console.log(res)
+                                //console.log(res)
+                                let folderList=[];
+                                let fileList=[];
                                 if(that.temp===1){ //temp为1则拼接路径搜索，为0直接使用默认接口搜索
+                                    let j=0;
+                                    let k=0;
                                     for(let i in res.content){  //
                                         let a=res.content[i].fileName
                                         let b=res.content[i].imgUrl
+                                        
                                         res.content[i].filelongName=a //长地址保留给搜索路径
                                         res.content[i].fileName=a.substr(a.lastIndexOf("\\")+1) //截取最后一个\之后的内容，作为短文件名显示
-
-                                        if(res.content[i].directory==false){  //判断文件类型，赋值图片地址
-                                            res.content[i].imgUrl='./icon/file.png'
+                                        res.content[i].imgUrl='./icon/file.png' //先把所有的图标改成"文件"，判断是文件夹的改成"文件夹"图标
+                                        
+                                        //文件夹 文件排序
+                                        if(res.content[i].directory==true){
+                                            // console.log("这里为什么是0",res.content[i].fileName)
+                                            folderList[j]=res.content[i].fileName;
+                                            res.content[j].imgUrl='./icon/folder.png';
+                                            j++;  
+                                            //console.log(folderList[i])
                                         }
                                         else{
-                                            res.content[i].imgUrl='./icon/folder.png'
+                                            fileList[k]=res.content[i].fileName;
+                                            //res.content[k].imgUrl='./icon/file.png';
+                                            k++;
                                         }
                                     }
+                                    
+                                    for(let i in fileList){ // 把装文件的数组push进 装文件夹的数组中
+                                        folderList.push(fileList[i])
+                                    }
                                     that.fileNameList = res.content;
+                                    // console.log("排序后的文件文件夹",folderList)
+                                    for(let i in that.fileNameList)
+                                    {
+                                        that.fileNameList[i].fileName=folderList[i]
+                                    }
+                                    //console.log("赋值成功的",that.fileNameList)
                                 } 
                                 else{
                                     for(let i in res.content){
